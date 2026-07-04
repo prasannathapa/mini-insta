@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Patterns / Mini Instagram</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#0e0e10;--soft:#16161a;--line:#26262c;--text:#e8e8ea;--muted:#9a9aa3;--dim:#5a5a63;--accent:#d4ff3a;--accent2:#6ea8ff;--good:#7ddc9a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;line-height:1.7;font-size:17px}
+nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:22px;padding:12px 26px;background:rgba(14,14,16,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(8px);flex-wrap:wrap}
+nav .brand img{height:22px;display:block}
+.navlinks{display:flex;gap:6px;flex-wrap:wrap}
+.navlinks a{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:6px}
+.navlinks a:hover{color:var(--text);background:var(--soft)}
+.navlinks a.active{color:#0a0a0c;background:var(--accent);font-weight:600}
+main{max-width:820px;margin:0 auto;padding:44px 26px 96px}
+h1,h2,h3,h4{font-weight:600;letter-spacing:-.02em;line-height:1.2}
+h1{font-size:40px;margin:.2em 0 .6em;letter-spacing:-.03em}
+h2{font-size:27px;margin:1.7em 0 .5em;padding-top:.5em;border-top:1px solid var(--line)}
+h3{font-size:20px;margin:1.4em 0 .4em}
+h4{font-size:16px;margin:1.2em 0 .3em;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+p{margin:.7em 0}
+strong{color:#fff;font-weight:600}em{color:var(--accent);font-style:italic}
+ul,ol{margin:.6em 0;padding-left:1.4em}li{margin:.35em 0}
+code{font-family:'JetBrains Mono',monospace;font-size:.86em;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:#e0e0e4}
+pre{background:#0a0a0c;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:16px 18px;overflow:auto;margin:1em 0}
+pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.6;color:#e0e0e4}
+pre.mermaid{border-left-color:var(--accent2);text-align:center;color:var(--muted)}
+blockquote{margin:1em 0;padding:2px 18px;border-left:3px solid var(--accent);color:#cfcfd6;background:rgba(212,255,58,.04)}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+table{width:100%;border-collapse:collapse;margin:1.2em 0;font-size:15px}
+th,td{border:1px solid var(--line);padding:9px 13px;text-align:left;vertical-align:top}
+th{background:var(--soft);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+td code,th code{font-size:12.5px}
+footer{max-width:820px;margin:0 auto;padding:24px 26px 60px;border-top:1px solid var(--line);color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:12px}
+</style>
+</head><body>
+<nav><a class="brand" href="../index.html"><img src="https://byts.co.in/imgs/bytsLogo.png" alt="Byts"/></a><div class="navlinks"><a href="../index.html">Home</a><a href="SETUP.html">Setup</a><a href="ARCHITECTURE.html">Architecture</a><a href="PATTERNS.html" class="active">Patterns</a><a href="HLD.html">HLD</a><a href="../HANDSON.html">Hands-on</a></div></nav>
+<main>
+<h1>OOP, SOLID &amp; design patterns in this codebase</h1>
+<p>For each principle/pattern: <strong>what</strong> it is, <strong>why</strong> it matters, and <strong>where</strong> it lives here (with the checkpoint tag that introduces it). Everything points at real files, so you can read the pattern in context.</p>
+<hr/>
+<h2>SOLID</h2>
+<h3>S - Single Responsibility Principle</h3>
+<p><em>A class should have one reason to change.</em></p>
+<ul><li><strong>Entities</strong> (<code>user/User</code>, <code>post/Post</code>) hold data and protect their own invariants - nothing else.</li><li><strong>Services</strong> (<code>post/PostService</code>, <code>graph/GraphService</code>) hold one use case each.</li><li><strong>Repositories</strong> only store and fetch.</li><li><strong><code>ui/ConsoleGateway</code></strong> only does input/output; it contains no business logic.</li></ul>
+<p>Contrast: an early instinct is to put "follow", "post", "notify" all on <code>User</code>. Splitting them is why the notification logic could later move behind an event without touching <code>User</code> at all.</p>
+<h3>O - Open/Closed Principle</h3>
+<p><em>Open for extension, closed for modification.</em></p>
+<ul><li>Add a new feed ranking -&gt; add a <code>FeedRankingStrategy</code>, change nothing else (<code>feed/</code>).</li><li>Add a new delivery channel -&gt; add a <code>NotificationChannel</code>, change nothing else (<code>notification/channel/</code>).</li><li>Add a new post type -&gt; add a subclass and one <code>switch</code> arm in <code>PostFactory</code> (the compiler finds every place that must change, because <code>Post</code> is sealed).</li></ul>
+<h3>L - Liskov Substitution Principle</h3>
+<p><em>Subtypes must be usable anywhere the base type is.</em></p>
+<ul><li>The sealed <code>Post</code> subtypes are true substitutes - the feed, factory and repository all work on <code>Post</code>.</li><li>The clinching proof is <code>PostRepositoryContract</code> / <code>UserRepositoryContract</code>: the <strong>same test suite passes against both the in-memory and SQLite adapters</strong> (<code>step-09-sqlite</code>). If SQLite behaved differently, the shared test would fail.</li></ul>
+<h3>I - Interface Segregation Principle</h3>
+<p><em>Many small interfaces beat one fat one.</em></p>
+<ul><li><code>UserRepository</code>, <code>PostRepository</code>, <code>FollowRepository</code>, ... are each just the handful of methods that one context needs. <code>PostRepository</code> grew its like/comment methods only when <code>PostService</code> actually needed them (<code>step-04-services</code>), not before.</li></ul>
+<h3>D - Dependency Inversion Principle</h3>
+<p><em>Depend on abstractions, not concretions.</em></p>
+<ul><li>Every service takes <strong>ports</strong> (interfaces) in its constructor, never a concrete store. <code>AppContext</code> is the single place that chooses concrete adapters.</li><li>Payoff: switching the whole app from in-memory to SQLite is one flag (<code>-Dmini.store=sqlite</code>) and zero changes to any service (<code>step-09-sqlite</code>).</li></ul>
+<hr/>
+<h2>Creational patterns</h2>
+<h3>Factory - <code>post/PostFactory</code> (<code>step-05-factory</code>)</h3>
+<ul><li><strong>What:</strong> one place that turns a <code>PostType</code> + fields (<code>PostRequest</code>) into the right <code>Post</code> subclass.</li><li><strong>Why:</strong> callers never write <code>new PhotoPost(...)</code>; adding a type is localized. The <code>switch</code> is exhaustive over the sealed type, so the compiler enforces completeness.</li><li><strong>Where:</strong> <code>PostFactory.create(...)</code>, used by <code>PostService.create(...)</code>, which every posting path funnels through.</li></ul>
+<h3>Singleton - <code>app/AppContext</code> (<code>step-03-ports</code>)</h3>
+<ul><li><strong>What:</strong> exactly one composition root, created once at start-up.</li><li><strong>Why:</strong> a composition root is genuinely global. Note the honesty in the code comments: elsewhere a Singleton is usually a hidden global and an anti-pattern. Services are <strong>not</strong> singletons reaching into globals - they receive their dependencies via constructors.</li></ul>
+<hr/>
+<h2>Structural patterns</h2>
+<h3>Facade - <code>app/InstagramService</code> (<code>step-04-services</code>)</h3>
+<ul><li><strong>What:</strong> one simple interface over the user/graph/post/feed/story/search/ messaging/notification contexts.</li><li><strong>Why:</strong> the console (and any future REST layer) calls one class; a "like" or "follow" quietly orchestrates several contexts behind it. Each service stays ignorant of the others.</li></ul>
+<h3>Adapter - <code>notification/channel/</code> (<code>step-07-adapter</code>)</h3>
+<ul><li><strong>What:</strong> <code>EmailNotificationAdapter</code> and <code>SmsNotificationAdapter</code> wrap third-party APIs (<code>LegacyEmailClient.sendEmail(...)</code>, <code>SmsGateway.push(...)</code>) whose shapes don't match our <code>NotificationChannel</code>.</li><li><strong>Why:</strong> the app delivers through one interface; the mismatched external APIs are hidden behind adapters. <code>ConsoleNotificationChannel</code> needs no adapter - it already speaks our language.</li></ul>
+<hr/>
+<h2>Behavioral patterns</h2>
+<h3>Strategy - <code>feed/FeedRankingStrategy</code> (<code>step-08-feed</code>)</h3>
+<ul><li><strong>What:</strong> <code>ChronologicalFeedStrategy</code> vs <code>EngagementFeedStrategy</code>, swappable at runtime via <code>InstagramService.setFeedRanking(...)</code>.</li><li><strong>Why:</strong> the ranking algorithm changes independently of how feeds are built or read. The console's "toggle feed ranking" shows it flip live.</li></ul>
+<h3>Observer / Publish-Subscribe - <code>platform/events/</code> (<code>step-06-events</code>)</h3>
+<ul><li><strong>What:</strong> <code>PostService</code> publishes <code>PostCreated</code> to an <code>EventBus</code>; the feed, notification and search contexts <strong>subscribe</strong> and react.</li><li><strong>Why:</strong> the publisher doesn't know who listens. Three independent consumers react to one event. This is also the message-queue seam (see <a href="HLD.html">HLD.html</a>).</li></ul>
+<hr/>
+<h2>Also worth pointing out</h2>
+<ul><li><strong>Records</strong> for immutable values: <code>Comment</code>, <code>Notification</code>, <code>DirectMessage</code>, <code>Follow</code>, <code>FeedEntry</code>, <code>PostRequest</code>.</li><li><strong>Sealed hierarchy + pattern matching:</strong> <code>Post</code> and the exhaustive <code>switch</code> in <code>PostFactory</code>, <code>SqlitePostRepository</code> and <code>Main</code> (early steps).</li><li><strong>Dependency injection of <code>java.time.Clock</code>:</strong> every time-dependent behaviour (story expiry, feed recency) is deterministic in tests because the clock is injected, never read from the wall directly except in <code>AppContext</code>.</li></ul>
+</main>
+<footer>Mini Instagram &nbsp;/&nbsp; Build Your Technical Skills</footer>
+
+</body></html>

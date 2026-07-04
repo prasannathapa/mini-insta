@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mini Instagram / Hands-on</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:wght@400;600&display=swap">
+
+<style>
+  :root{
+    --bg:#0e0e10; --bg-soft:#16161a; --line:#26262c; --text:#e8e8ea;
+    --muted:#8a8a93; --dim:#5a5a63; --accent:#d4ff3a; --accent-2:#6ea8ff;
+    --good:#7ddc9a; --bad:#ff7a7a; --warn:#f5b840;
+  }
+  html, body { background: var(--bg); }
+  .reveal-viewport { background: var(--bg) !important; }
+
+  .reveal { font-family:'Inter',system-ui,sans-serif; font-weight:400; color:var(--text);
+            font-size:22px; letter-spacing:-0.005em; }
+  .reveal .slides { text-align:left; }
+  .reveal .slides > section, .reveal .slides > section > section {
+    padding:56px 80px; height:100%; box-sizing:border-box; }
+
+  .reveal h1,.reveal h2,.reveal h3,.reveal h4 { font-family:'Inter',sans-serif; font-weight:600;
+    color:var(--text); text-transform:none; letter-spacing:-0.02em; margin:0 0 0.4em 0; line-height:1.1; }
+  .reveal h1 { font-size:64px; font-weight:700; letter-spacing:-0.04em; }
+  .reveal h2 { font-size:36px; font-weight:600; }
+  .reveal h3 { font-size:22px; font-weight:600; }
+  .reveal p,.reveal li { font-size:20px; line-height:1.55; color:#d4d4d8; }
+  .reveal strong { color:var(--text); font-weight:600; }
+  .reveal em { font-style:italic; color:var(--accent); }
+
+  .eyebrow { font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:1em; display:block; }
+
+  .display { font-family:'Fraunces',serif; font-weight:400; font-size:104px; line-height:0.95;
+    letter-spacing:-0.04em; margin:0; }
+  .display em { font-style:italic; color:var(--accent); }
+  .subtitle { font-size:22px; color:var(--muted); margin-top:1.2em; max-width:64ch; }
+  .title-wrap { display:flex; flex-direction:column; justify-content:center; height:100%; }
+  .lede { font-size:24px; line-height:1.4; color:#e8e8ea; max-width:70ch; }
+
+  .reveal code:not(pre code) { font-family:'JetBrains Mono',monospace; font-size:0.9em;
+    background:var(--bg-soft); border:1px solid var(--line); padding:1px 6px; border-radius:4px; color:#e0e0e4; }
+
+  .footer-line { position:absolute; bottom:26px; left:80px; right:80px; display:flex; justify-content:space-between;
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--dim); letter-spacing:0.1em; text-transform:uppercase; }
+
+  .reveal .slide-number { background:transparent; color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:12px; }
+  .reveal .progress { color:var(--accent); height:2px; }
+  .reveal .controls { color:var(--dim); }
+
+  /* Byts brand mark, fixed corner */
+  .brand { position:fixed; top:18px; right:26px; z-index:40; display:flex; align-items:center; gap:8px; opacity:0.9; }
+  .brand img { height:24px; width:auto; display:block; }
+
+  /* hands-on treatment */
+  .reveal section.handson { background:
+      radial-gradient(1200px 500px at 90% -10%, rgba(212,255,58,0.06), transparent 60%); }
+  .handson-head { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .handson-badge { font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.18em;
+    text-transform:uppercase; color:#0a0a0c; background:var(--accent); padding:5px 12px; border-radius:5px; font-weight:600; }
+  .handson-step { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--accent); }
+
+  .cmd-row { display:flex; align-items:stretch; gap:8px; margin:10px 0; }
+  .cmd { background:#0a0a0c; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px;
+    font-family:'JetBrains Mono',monospace; font-size:15px; color:#e0e0e4; padding:13px 16px; line-height:1.7; flex:1; }
+  .cmd .c { color:var(--dim); }
+  .copy { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); background:transparent; border:1px solid rgba(212,255,58,0.3); border-radius:6px;
+    padding:0 12px; cursor:pointer; white-space:nowrap; }
+  .copy:hover { background:rgba(212,255,58,0.1); }
+  .copy.copied { color:var(--good); border-color:var(--good); }
+
+  .read { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--muted); margin:6px 0 4px; }
+  .read b { color:var(--accent-2); }
+
+  .do { list-style:none; margin:6px 0 0 0; }
+  .do li { position:relative; padding-left:26px; margin:7px 0; font-size:17px; color:#d4d4d8; }
+  .do li::before { content:''; position:absolute; left:0; top:4px; width:13px; height:13px; border-radius:3px;
+    border:1.5px solid var(--dim); }
+  .do li .pk { font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:15px; }
+  .do li .hint { color:var(--muted); font-size:15px; }
+
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:34px; align-items:start; }
+
+  /* mark-complete checkbox (localStorage-backed) */
+  .done { display:inline-flex; align-items:center; gap:10px; cursor:pointer; font-family:'JetBrains Mono',monospace;
+    font-size:13px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-top:16px;
+    user-select:none; border:1px solid var(--line); border-radius:8px; padding:9px 14px; }
+  .done:hover { border-color:var(--dim); }
+  .done input { width:17px; height:17px; accent-color:var(--accent); cursor:pointer; }
+  .done.checked { color:var(--good); border-color:rgba(125,220,154,0.4); background:rgba(125,220,154,0.05); }
+
+  /* fixed progress pill, top-left */
+  .pill { position:fixed; top:18px; left:26px; z-index:40; display:flex; align-items:center; gap:10px;
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--muted); background:rgba(22,22,26,0.85); border:1px solid var(--line); border-radius:20px; padding:6px 14px; }
+  .pill .track { width:120px; height:4px; background:var(--line); border-radius:2px; overflow:hidden; }
+  .pill .fill { height:100%; width:0%; background:var(--accent); transition:width 0.3s ease; }
+  .pill b { color:var(--accent); }
+
+  .reveal ul.clean { list-style:none; margin-left:0; }
+  .reveal ul.clean li { padding-left:22px; position:relative; }
+  .reveal ul.clean li::before { content:''; position:absolute; left:0; top:12px; width:8px; height:1px; background:var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="brand"><img src="https://byts.co.in/imgs/bytsLogo.png" alt="Byts" /></div>
+<div class="pill"><span><b id="pnum">0</b> / 12 steps</span><span class="track"><span class="fill" id="pfill"></span></span></div>
+
+<div class="reveal"><div class="slides">
+
+  <!-- TITLE -->
+  <section class="title-wrap">
+    <span class="eyebrow">mini instagram / hands-on companion</span>
+    <h1 class="display">Build it,<br/><em>one green test</em><br/>at a time.</h1>
+    <p class="subtitle">This deck moves at your pace. Copy each command, read the tests, write the classes until they pass. Your progress is saved on this device, so you can close the tab and pick up where you left off.</p>
+    <div class="footer-line"><span>self-paced</span><span>your progress saves locally</span></div>
+  </section>
+
+  <!-- HOW TO USE -->
+  <section>
+    <span class="eyebrow">how this works</span>
+    <h2>The test is the specification.</h2>
+    <ul class="clean">
+      <li class="fragment">Each step, you pull that step's <em>tests</em> only. The solution code is never handed to you.</li>
+      <li class="fragment">Open the tests and read them. They say exactly what your classes must do.</li>
+      <li class="fragment">Write the classes. Run <code>mvnw test</code> until the step is green.</li>
+      <li class="fragment">Tick <b>mark step complete</b> at the bottom of each step. The pill up top tracks you.</li>
+    </ul>
+    <p class="lede fragment" style="margin-top:20px;">Stuck? The instructor is walking the same steps on the big screen. The step labels match.</p>
+    <div class="footer-line"><span>read the test, then build</span></div>
+  </section>
+
+  <!-- STEP 01 SETUP -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 01</span><span class="handson-step">start clean</span></div>
+    <h2>Clone, then rewind to the scaffold.</h2>
+    <div class="cmd-row">
+      <div class="cmd"><span class="c"># a fresh clone is the finished app; rewind to the empty scaffold</span><br/>git clone &lt;repo-url&gt; &amp;&amp; cd mini-instagram<br/>git switch -c my-build step-01-scaffold</div>
+      <button class="copy" data-copy="git clone <repo-url> && cd mini-instagram
+git switch -c my-build step-01-scaffold">copy</button>
+    </div>
+    <ul class="do">
+      <li>Confirm a JDK 25 or newer: <span class="pk">java -version</span></li>
+      <li>You are now at the scaffold: build tooling and an empty <span class="pk">Main</span>, no solution code.</li>
+      <li><span class="pk">mvnw test</span> passes the single scaffold test. You are ready.</li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="01"/> mark step complete</label>
+    <div class="footer-line"><span>step-01 / setup</span></div>
+  </section>
+
+  <!-- STEP 02 DOMAIN -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 02</span><span class="handson-step">domain model</span></div>
+    <h2>The first classes: users and posts.</h2>
+    <div class="cmd-row">
+      <div class="cmd"><span class="c"># pull this step's tests onto your scaffold</span><br/>git checkout step-02-domain -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-02-domain -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>post/PostTest</b> and <b>user/UserTest</b></p>
+    <ul class="do">
+      <li><span class="pk">util/IdGenerator</span> <span class="hint">hands out ids per named sequence</span></li>
+      <li><span class="pk">user/User</span> <span class="hint">equal by id; username trimmed + lower-cased</span></li>
+      <li><span class="pk">post/PostType, Post, PhotoPost, VideoPost, TextPost</span> <span class="hint">seal Post to exactly the three; counters never go negative</span></li>
+      <li><span class="pk">post/Comment</span> <span class="hint">an immutable value: a record</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="02"/> mark step complete</label>
+    <div class="footer-line"><span>step-02 / domain</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 03 PORTS -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 03</span><span class="handson-step">ports and adapters</span></div>
+    <h2>Where entities live, behind an interface.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-03-ports -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-03-ports -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>user/UserRepositoryContract</b> (the same suite must pass on any store)</p>
+    <ul class="do">
+      <li><span class="pk">user/UserRepository</span> + <span class="pk">InMemoryUserRepository</span> <span class="hint">the port, then one adapter</span></li>
+      <li><span class="pk">post/PostRepository</span> + <span class="pk">InMemoryPostRepository</span></li>
+      <li><span class="pk">app/AppContext</span> <span class="hint">the composition root: builds and wires everything, once</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="03"/> mark step complete</label>
+    <div class="footer-line"><span>step-03 / ports</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 04 SERVICES -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 04</span><span class="handson-step">services + facade</span></div>
+    <h2>The business rules, and one front door.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-04-services -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-04-services -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>GraphServiceTest, UserServiceTest, PostServiceTest, InstagramServiceTest</b></p>
+    <ul class="do">
+      <li><span class="pk">graph/Follow, FollowRepository, InMemoryFollowRepository, GraphService</span> <span class="hint">follow is idempotent; no following yourself</span></li>
+      <li><span class="pk">user/UserService</span> + <span class="pk">UsernameTakenException</span> <span class="hint">unique username, ignoring case</span></li>
+      <li><span class="pk">post/PostService</span> <span class="hint">like once per user; keep the counter in step</span></li>
+      <li><span class="pk">app/InstagramService</span> <span class="hint">the facade the console talks to; every service takes a Clock</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="04"/> mark step complete</label>
+    <div class="footer-line"><span>step-04 / services</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 05 FACTORY -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 05</span><span class="handson-step">factory</span></div>
+    <h2>One place decides which post to build.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-05-factory -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-05-factory -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>post/PostFactoryTest</b></p>
+    <ul class="do">
+      <li><span class="pk">post/PostRequest</span> <span class="hint">a type plus its fields, in one argument</span></li>
+      <li><span class="pk">post/PostFactory</span> <span class="hint">one create(); an exhaustive switch over PostType</span></li>
+      <li><span class="hint">route PostService creation through the factory</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="05"/> mark step complete</label>
+    <div class="footer-line"><span>step-05 / factory</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 06 EVENTS -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 06</span><span class="handson-step">events + observer</span></div>
+    <h2>A post announces itself; others react.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-06-events -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-06-events -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>platform/events/InProcessEventBusTest, notification/NotificationServiceTest</b></p>
+    <div class="two">
+      <ul class="do">
+        <li><span class="pk">platform.events/DomainEvent, EventBus, InProcessEventBus, PostCreated</span> <span class="hint">publish reaches every subscriber</span></li>
+      </ul>
+      <ul class="do">
+        <li><span class="pk">notification/NotificationType, Notification, NotificationService, NotificationRepository, InMemoryNotificationRepository</span> <span class="hint">notify followers only</span></li>
+      </ul>
+    </div>
+    <p class="read" style="margin-top:8px;">then: PostService publishes <code>PostCreated</code>; subscribe the notifier in <code>AppContext</code>.</p>
+    <label class="done"><input type="checkbox" data-step="06"/> mark step complete</label>
+    <div class="footer-line"><span>step-06 / events</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 07 ADAPTER -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 07</span><span class="handson-step">adapter</span></div>
+    <h2>Deliver through one channel, any backend.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-07-adapter -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-07-adapter -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>notification/channel/NotificationChannelAdapterTest</b></p>
+    <ul class="do">
+      <li><span class="pk">notification.channel/NotificationChannel</span> + <span class="pk">ConsoleNotificationChannel</span> <span class="hint">our own language, no adapter needed</span></li>
+      <li><span class="pk">EmailNotificationAdapter, SmsNotificationAdapter</span> <span class="hint">translate deliver(handle, n) into each foreign API</span></li>
+      <li><span class="pk">...channel/external/LegacyEmailClient, SmsGateway</span> <span class="hint">the foreign libraries you wrap, untouched</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="07"/> mark step complete</label>
+    <div class="footer-line"><span>step-07 / adapter</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 08 FEED -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 08</span><span class="handson-step">feed + strategy</span></div>
+    <h2>Build the feed, swap how it ranks.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-08-feed -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-08-feed -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>feed/FeedStrategyTest, feed/FeedServiceTest</b></p>
+    <ul class="do">
+      <li><span class="pk">feed/FeedEntry, FeedRepository, InMemoryFeedRepository, FeedService</span> <span class="hint">subscribe to PostCreated; fan out to author + followers</span></li>
+      <li><span class="pk">FeedRankingStrategy, ChronologicalFeedStrategy, EngagementFeedStrategy</span> <span class="hint">one rank(posts, now); setStrategy swaps it at runtime</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="08"/> mark step complete</label>
+    <div class="footer-line"><span>step-08 / feed</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 09 SQLITE -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 09</span><span class="handson-step">persistence</span></div>
+    <h2>A real database, same contract.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-09-sqlite -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-09-sqlite -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>SqliteUserRepositoryTest, SqlitePostRepositoryTest</b> (they extend the step-03 contracts)</p>
+    <ul class="do">
+      <li><span class="pk">platform.db/Database, DataAccessException</span> + <span class="pk">resources/schema.sql</span></li>
+      <li><span class="pk">Sqlite{User,Post,Follow,Notification,Feed}Repository</span> <span class="hint">same ports, SQL behind them</span></li>
+      <li><span class="hint">add fromStorage to the entities; select the store in AppContext</span></li>
+    </ul>
+    <div class="cmd-row">
+      <div class="cmd"><span class="c"># run on SQLite; your data survives a restart</span><br/>mvnw exec:java -Dmini.store=sqlite</div>
+      <button class="copy" data-copy="mvnw exec:java -Dmini.store=sqlite">copy</button>
+    </div>
+    <label class="done"><input type="checkbox" data-step="09"/> mark step complete</label>
+    <div class="footer-line"><span>step-09 / persistence</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 10 EXTRAS -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 10</span><span class="handson-step">stories, search, DMs</span></div>
+    <h2>The rest of the product, same patterns.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-10-extras -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-10-extras -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>StoryServiceTest, SearchServiceTest, MessagingServiceTest</b></p>
+    <ul class="do">
+      <li><span class="pk">story/Story, StoryRepository, InMemoryStoryRepository, StoryService</span> <span class="hint">expires after 24h, by the injected clock</span></li>
+      <li><span class="pk">search/Hashtags, HashtagIndex, InMemoryHashtagIndex, SearchService</span> <span class="hint">a fourth subscriber to PostCreated</span></li>
+      <li><span class="pk">messaging/DirectMessage, MessageRepository, InMemoryMessageRepository, MessagingService</span> <span class="hint">keyed by the unordered pair of users</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="10"/> mark step complete</label>
+    <div class="footer-line"><span>step-10 / extras</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 11 CACHE -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 11</span><span class="handson-step">cache</span></div>
+    <h2>Do not build the same feed twice.</h2>
+    <div class="cmd-row">
+      <div class="cmd">git checkout step-11-cache -- src/test/java</div>
+      <button class="copy" data-copy="git checkout step-11-cache -- src/test/java">copy</button>
+    </div>
+    <p class="read">read first: <b>platform/cache/InMemoryCacheTest</b></p>
+    <ul class="do">
+      <li><span class="pk">platform.cache/Cache</span> + <span class="pk">InMemoryCache</span> <span class="hint">miss builds and stores, hit returns; invalidate one entry</span></li>
+      <li><span class="hint">read through the cache in FeedService; a new post invalidates the affected feeds</span></li>
+    </ul>
+    <label class="done"><input type="checkbox" data-step="11"/> mark step complete</label>
+    <div class="footer-line"><span>step-11 / cache</span><span>mvnw test</span></div>
+  </section>
+
+  <!-- STEP 12 APP -->
+  <section class="handson">
+    <div class="handson-head"><span class="handson-badge">Step 12</span><span class="handson-step">the whole app</span></div>
+    <h2>Wire the edge, then run it.</h2>
+    <p class="read">no new test this step: the console is pure input and output. The green suite already proves the logic.</p>
+    <ul class="do">
+      <li><span class="pk">ui/ConsoleGateway</span> <span class="hint">the REPL; every action is one facade call</span></li>
+      <li><span class="pk">ui/SeedData</span> <span class="hint">a few users and posts to explore</span></li>
+      <li><span class="hint">point Main at the gateway</span></li>
+    </ul>
+    <div class="cmd-row">
+      <div class="cmd"><span class="c"># launch it</span><br/>mvnw exec:java</div>
+      <button class="copy" data-copy="mvnw exec:java">copy</button>
+    </div>
+    <label class="done"><input type="checkbox" data-step="12"/> mark step complete</label>
+    <div class="footer-line"><span>step-12 / the app</span><span>mvnw exec:java</span></div>
+  </section>
+
+  <!-- DONE -->
+  <section class="title-wrap" id="doneSlide">
+    <span class="eyebrow">you shipped it</span>
+    <h1 class="display">A working<br/><em>Instagram</em>,<br/>from zero.</h1>
+    <p class="subtitle" id="doneMsg">Twelve steps, one green suite. You wrote every class from its test, behind clean seams that scale.</p>
+    <div class="footer-line"><span>mini instagram</span><span>now go build something real</span></div>
+  </section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true, slideNumber: 'c/t', controls: true, progress: true,
+    transition: 'fade', transitionSpeed: 'fast', width: 1280, height: 720, margin: 0.06,
+    plugins: [ RevealHighlight ]
+  });
+
+  // ---- copy buttons ----
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-copy') || '';
+      navigator.clipboard.writeText(text).then(function () {
+        var old = btn.textContent;
+        btn.textContent = 'copied';
+        btn.classList.add('copied');
+        setTimeout(function () { btn.textContent = old; btn.classList.remove('copied'); }, 1400);
+      });
+    });
+  });
+
+  // ---- localStorage progress ----
+  var KEY = 'miniinsta-progress-v1';
+  var TOTAL = 12;
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function save(state) { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  function refresh(state) {
+    var done = Object.keys(state).filter(function (k) { return state[k]; }).length;
+    document.getElementById('pnum').textContent = done;
+    document.getElementById('pfill').style.width = Math.round((done / TOTAL) * 100) + '%';
+    var msg = document.getElementById('doneMsg');
+    if (msg) {
+      msg.textContent = (done >= TOTAL)
+        ? 'All twelve steps complete. You wrote every class from its test, behind clean seams that scale.'
+        : 'Twelve steps, one green suite. You wrote every class from its test, behind clean seams that scale. (' + done + ' of ' + TOTAL + ' done so far.)';
+    }
+  }
+
+  var state = load();
+  document.querySelectorAll('.done input[type=checkbox]').forEach(function (box) {
+    var step = box.getAttribute('data-step');
+    var label = box.closest('.done');
+    if (state[step]) { box.checked = true; label.classList.add('checked'); }
+    box.addEventListener('change', function () {
+      state[step] = box.checked;
+      if (box.checked) { label.classList.add('checked'); } else { label.classList.remove('checked'); }
+      save(state); refresh(state);
+    });
+  });
+  refresh(state);
+</script>
+</body>
+</html>

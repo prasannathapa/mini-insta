@@ -1,0 +1,6 @@
+# Normalise line endings: LF in the repo for everything text, except Windows
+# batch files which must stay CRLF. Keeps run.sh working on macOS/Linux and
+# build.bat working on Windows regardless of who clones the repo.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

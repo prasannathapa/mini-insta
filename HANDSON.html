@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hands-on / Mini Instagram</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#0e0e10;--soft:#16161a;--line:#26262c;--text:#e8e8ea;--muted:#9a9aa3;--dim:#5a5a63;--accent:#d4ff3a;--accent2:#6ea8ff;--good:#7ddc9a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;line-height:1.7;font-size:17px}
+nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:22px;padding:12px 26px;background:rgba(14,14,16,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(8px);flex-wrap:wrap}
+nav .brand img{height:22px;display:block}
+.navlinks{display:flex;gap:6px;flex-wrap:wrap}
+.navlinks a{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:6px}
+.navlinks a:hover{color:var(--text);background:var(--soft)}
+.navlinks a.active{color:#0a0a0c;background:var(--accent);font-weight:600}
+main{max-width:820px;margin:0 auto;padding:44px 26px 96px}
+h1,h2,h3,h4{font-weight:600;letter-spacing:-.02em;line-height:1.2}
+h1{font-size:40px;margin:.2em 0 .6em;letter-spacing:-.03em}
+h2{font-size:27px;margin:1.7em 0 .5em;padding-top:.5em;border-top:1px solid var(--line)}
+h3{font-size:20px;margin:1.4em 0 .4em}
+h4{font-size:16px;margin:1.2em 0 .3em;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+p{margin:.7em 0}
+strong{color:#fff;font-weight:600}em{color:var(--accent);font-style:italic}
+ul,ol{margin:.6em 0;padding-left:1.4em}li{margin:.35em 0}
+code{font-family:'JetBrains Mono',monospace;font-size:.86em;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:#e0e0e4}
+pre{background:#0a0a0c;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:16px 18px;overflow:auto;margin:1em 0}
+pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.6;color:#e0e0e4}
+pre.mermaid{border-left-color:var(--accent2);text-align:center;color:var(--muted)}
+blockquote{margin:1em 0;padding:2px 18px;border-left:3px solid var(--accent);color:#cfcfd6;background:rgba(212,255,58,.04)}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+table{width:100%;border-collapse:collapse;margin:1.2em 0;font-size:15px}
+th,td{border:1px solid var(--line);padding:9px 13px;text-align:left;vertical-align:top}
+th{background:var(--soft);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+td code,th code{font-size:12.5px}
+footer{max-width:820px;margin:0 auto;padding:24px 26px 60px;border-top:1px solid var(--line);color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:12px}
+</style>
+</head><body>
+<nav><a class="brand" href="index.html"><img src="https://byts.co.in/imgs/bytsLogo.png" alt="Byts"/></a><div class="navlinks"><a href="index.html">Home</a><a href="docs/SETUP.html">Setup</a><a href="docs/ARCHITECTURE.html">Architecture</a><a href="docs/PATTERNS.html">Patterns</a><a href="docs/HLD.html">HLD</a><a href="HANDSON.html" class="active">Hands-on</a></div></nav>
+<main>
+<h1>Hands-on worksheet - Mini Instagram</h1>
+<p>Work through this with the instructor, one checkpoint at a time. For each step: checkout the tag, run it, open the named file, notice the idea, then do the short exercise. Everything is revertable with <code>git checkout -- .</code></p>
+<h2>One-time setup</h2>
+<pre><code># you need a JDK 25 or newer: check with
+java -version
+# if it is older, point JAVA_HOME at a JDK 25+ (see docs/SETUP.md)
+
+git clone &lt;repo&gt;            # or open the folder you were given
+cd instagram
+mvnw.cmd clean test         # Windows   (macOS/Linux: ./mvnw clean test)</code></pre>
+<p>Handy commands you will reuse:</p>
+<pre><code>git checkout step-06-events   # jump to a checkpoint
+git checkout main             # back to the finished app
+git checkout -- .             # undo your experiment on this checkout
+mvnw.cmd exec:java            # run the app / that step's demo
+mvnw.cmd test                 # run the tests</code></pre>
+<hr/>
+<h2>Checkpoint by checkpoint</h2>
+<h3>step-01-scaffold - setup</h3>
+<ul><li>Run: <code>mvnw.cmd clean test</code></li><li>Open: <code>src/test/java/com/miniinsta/MainTest.java</code></li><li>Notice: <code>banner()</code> was pulled out of <code>main()</code> so a test can call it. Logic you can call is logic you can test.</li><li>Do: add a second assertion that the banner contains the word <code>console</code>. Re-run the tests.</li></ul>
+<h3>step-02-domain - SOLID, sealed types, records</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>src/main/java/com/miniinsta/post/Post.java</code> and <code>Main.java</code></li><li>Notice: <code>Post</code> is <code>sealed</code>; the <code>switch</code> in <code>Main.render</code> has no <code>default</code>.</li><li>Do: in <code>Main.render</code>, delete the <code>case TextPost</code> branch and build. The compiler refuses (the switch is no longer exhaustive). Put it back. That is the safety net a sealed hierarchy gives you.</li></ul>
+<h3>step-03-ports - ports, adapters, Singleton (DIP, ISP)</h3>
+<ul><li>Run: <code>mvnw.cmd test</code></li><li>Open: <code>user/UserRepository.java</code>, <code>user/InMemoryUserRepository.java</code>, <code>app/AppContext.java</code></li><li>Notice: the service depends on the interface; <code>AppContext</code> is the only place a concrete store is chosen.</li><li>Do: add a test method to <code>UserRepositoryContract</code> that saving two users makes <code>findAll()</code> size 2. Run it. It passes for the in-memory adapter now, and will pass for SQLite for free at step 9.</li></ul>
+<h3>step-04-services - services + Facade</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>app/InstagramService.java</code></li><li>Notice: the console calls one class; <code>follow(name)</code> resolves a user in one context and writes an edge in another. <code>requireLogin()</code> guards actions.</li><li>Do: add a facade method <code>myFollowerCount()</code> that returns the follower count of the current user (use the graph service). You do not need to touch any other file.</li></ul>
+<h3>step-05-factory - Factory</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>post/PostFactory.java</code> and <code>post/PostType.java</code></li><li>Notice: one exhaustive <code>switch</code> maps a <code>PostType</code> to the right subclass.</li><li>Do: add a value <code>REEL</code> to <code>PostType</code> but do NOT add a factory case. Build. The compiler points at the exact switch to fix. Revert.</li></ul>
+<h3>step-06-events - Observer / EventBus</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>app/AppContext.java</code> (the <code>eventBus.subscribe(...)</code> lines) and <code>platform/events/EventBus.java</code></li><li>Notice: <code>PostService</code> publishes <code>PostCreated</code> and does not call the feed, notification or search code directly.</li><li>Do: add a fourth subscriber in <code>AppContext</code>: <code>eventBus.subscribe(PostCreated.class, e -&gt; System.out.println("[audit] post " + e.postId()));</code> Run, sign in, post, and watch your line fire. No other file changes.</li></ul>
+<h3>step-07-adapter - Adapter</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>notification/channel/</code> (the interface, the console channel, the two adapters)</li><li>Notice: email and SMS wrap third-party APIs with different shapes; the console channel needs no adapter.</li><li>Do: write a <code>LoggingNotificationChannel implements NotificationChannel</code> that prints, and wire it in <code>AppContext</code> in place of the console channel. Run.</li></ul>
+<h3>step-08-feed - Strategy + fan-out on write</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code>, sign in as <code>alice</code>, use menu 1 (feed) and 12 (toggle ranking)</li><li>Open: <code>feed/EngagementFeedStrategy.java</code></li><li>Notice: swapping the strategy reorders the same feed; nothing else changes.</li><li>Do: change the like/comment weights in <code>EngagementFeedStrategy</code>, re-run, and see the order shift.</li></ul>
+<h3>step-09-sqlite - persistence, normalization, contract tests</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java -Dmini.store=sqlite</code>, register a user, exit, run again.</li><li>Open: <code>src/main/resources/schema.sql</code> and <code>post/SqlitePostRepositoryTest.java</code></li><li>Notice: your user persists across runs; the same contract test runs on SQLite; the schema has denormalized <code>like_count</code> / <code>comment_count</code> / <code>feed</code> alongside the normalized tables.</li><li>Do: find the denormalized columns in the schema and explain to a neighbour what keeps them correct (hint: <code>PostService.like</code>).</li></ul>
+<h3>step-10-extras - stories, search, DMs</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code>, post something with <code>#tags</code>, then search (menu 5)</li><li>Open: <code>search/Hashtags.java</code> and <code>story/Story.java</code></li><li>Notice: search is filled by observing <code>PostCreated</code>; a story expires 24h after posting, checked against an injected clock.</li><li>Do: change <code>LIFESPAN</code> in <code>Story.java</code> to <code>Duration.ofMinutes(1)</code> and look at <code>StoryServiceTest</code> - why does the test still pass without waiting?</li></ul>
+<h3>step-11-cache - read-through cache</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>feed/FeedService.java</code> (the <code>feed(...)</code> method)</li><li>Notice: a cache miss builds and stores; a new post invalidates the affected feeds.</li><li>Do: add <code>System.out.println("cache miss for " + viewerId);</code> in the miss branch. Run, view a feed twice: the message prints once.</li></ul>
+<h3>step-12-app / v1.0 - the whole app</h3>
+<ul><li>Run: <code>mvnw.cmd exec:java</code></li><li>Open: <code>ui/ConsoleGateway.java</code></li><li>Notice: the gateway only ever calls <code>InstagramService</code> (the facade); it has no business logic.</li><li>Do: sign in, follow <code>@alice</code>, view your feed, post, like a post, send a DM (menu 9). Then find where each of those becomes one facade call.</li></ul>
+<hr/>
+<h2>Stretch exercises (take-home)</h2>
+<ol><li>Add <code>SqliteStoryRepository</code> (mirror the other SQLite adapters) and a <code>StoryRepositoryContract</code> run against both adapters.</li><li>Add a <code>ReelPost</code> type and let the compiler show you every place to update.</li><li>Add a <code>CompositeNotificationChannel</code> that delivers to console AND email.</li><li>Add a <code>UserFollowed</code> event, and a notification when someone follows you.</li><li><strong>Private accounts.</strong> Add an <code>isPrivate</code> flag to <code>User</code>; make <code>follow</code> on a private account create a pending request that must be approved; make feed and profile reads check that the viewer is the owner or an approved follower. This turns "authorization" into a real, tested feature.</li><li>Sketch a <code>ShardRouter</code> behind <code>UserRepository</code> that routes by <code>id % N</code> to one of N databases, and note which query becomes hard (hint: the social graph).</li></ol>
+</main>
+<footer>Mini Instagram &nbsp;/&nbsp; Build Your Technical Skills</footer>
+
+</body></html>
