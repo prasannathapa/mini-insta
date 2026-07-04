@@ -5,6 +5,8 @@ import com.miniinsta.feed.FeedService;
 import com.miniinsta.feed.InMemoryFeedRepository;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
+import com.miniinsta.messaging.InMemoryMessageRepository;
+import com.miniinsta.messaging.MessagingService;
 import com.miniinsta.notification.InMemoryNotificationRepository;
 import com.miniinsta.notification.NotificationService;
 import com.miniinsta.notification.channel.ConsoleNotificationChannel;
@@ -15,6 +17,10 @@ import com.miniinsta.post.InMemoryPostRepository;
 import com.miniinsta.post.PhotoPost;
 import com.miniinsta.post.Post;
 import com.miniinsta.post.PostService;
+import com.miniinsta.search.InMemoryHashtagIndex;
+import com.miniinsta.search.SearchService;
+import com.miniinsta.story.InMemoryStoryRepository;
+import com.miniinsta.story.StoryService;
 import com.miniinsta.user.InMemoryUserRepository;
 import com.miniinsta.user.UserService;
 import org.junit.jupiter.api.Test;
@@ -46,9 +52,13 @@ class InstagramServiceTest {
                 new InMemoryNotificationRepository(), graph, users, new ConsoleNotificationChannel(), clock);
         FeedService feed = new FeedService(
                 new InMemoryFeedRepository(), postRepository, graph, new ChronologicalFeedStrategy(), clock);
+        StoryService stories = new StoryService(new InMemoryStoryRepository(), graph, clock);
+        SearchService search = new SearchService(new InMemoryHashtagIndex(), postRepository, users);
+        MessagingService messaging = new MessagingService(new InMemoryMessageRepository(), clock);
         bus.subscribe(PostCreated.class, feed::onPostCreated);
         bus.subscribe(PostCreated.class, notifications::onPostCreated);
-        return new InstagramService(users, graph, posts, notifications, feed);
+        bus.subscribe(PostCreated.class, search::onPostCreated);
+        return new InstagramService(users, graph, posts, notifications, feed, stories, search, messaging);
     }
 
     @Test

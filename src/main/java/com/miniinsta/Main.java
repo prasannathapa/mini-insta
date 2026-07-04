@@ -1,61 +1,44 @@
 package com.miniinsta;
 
-import com.miniinsta.platform.db.Database;
-import com.miniinsta.platform.events.InProcessEventBus;
-import com.miniinsta.post.PostService;
-import com.miniinsta.post.SqlitePostRepository;
-import com.miniinsta.user.SqliteUserRepository;
-import com.miniinsta.user.User;
-import com.miniinsta.user.UserService;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Clock;
+import com.miniinsta.app.AppContext;
+import com.miniinsta.app.InstagramService;
 
 /**
  * Mini Instagram - console application.
  *
- * <p>STEP 09 - SQLITE PERSISTENCE. The same services now run on SQLite adapters.
- * This demo writes with one database connection, closes it, then reopens the
- * same file with a fresh connection and reads the data back - proving it landed
- * on disk. Only the adapter changed; the services and their ports are identical
- * to the in-memory steps.</p>
+ * <p>STEP 10 - STORIES, SEARCH &amp; DMs. Three more contexts round out the app:
+ * ephemeral stories (24h expiry), hashtag search backed by an inverted index
+ * that is filled by observing PostCreated, and direct messages.</p>
  */
 public class Main {
 
-    public static void main(String[] args) throws IOException {
-        System.out.println("=== Mini Instagram :: step 09 (SQLite persistence) ===\n");
+    public static void main(String[] args) {
+        System.out.println("=== Mini Instagram :: step 10 (stories, search, DMs) ===\n");
 
-        Clock clock = Clock.systemDefaultZone();
-        Path dbPath = Path.of("data", "demo.db");
-        Files.createDirectories(dbPath.getParent());
-        Files.deleteIfExists(dbPath); // start fresh so the demo is re-runnable
+        InstagramService app = AppContext.get().instagram();
+        app.register("alice", "Alice Anderson");
+        app.register("bob", "Bob Brown");
+        app.follow("alice");
 
-        // --- write, then close the connection ---
-        try (Database db = Database.file(dbPath.toString())) {
-            UserService users = new UserService(new SqliteUserRepository(db), clock);
-            PostService posts = new PostService(new SqlitePostRepository(db), new InProcessEventBus(), clock);
+        app.login("alice");
+        app.postText("Loving the weather today #sunny #travel");
+        app.postPhoto("Beach day #travel", "beach.jpg", "clarendon");
+        app.postStory("At the beach! (disappears in 24h)");
 
-            User alice = users.register("alice", "Alice Anderson");
-            posts.postText(alice.getId(), "Stored in SQLite!");
-            posts.postPhoto(alice.getId(), "On disk now", "beach.jpg", "clarendon");
-            System.out.println("Wrote @alice + 2 posts to " + dbPath + ", then closed the connection.");
-        }
+        System.out.println("Search #travel -> " + app.searchHashtag("travel").size() + " post(s)");
+        System.out.println("Search users 'ander' -> " + app.searchUsers("ander"));
 
-        // --- reopen the SAME file with a brand-new connection ---
-        try (Database db = Database.file(dbPath.toString())) {
-            UserService users = new UserService(new SqliteUserRepository(db), clock);
-            PostService posts = new PostService(new SqlitePostRepository(db), new InProcessEventBus(), clock);
+        app.login("bob");
+        System.out.println("bob's active stories feed -> " + app.stories().size() + " story(ies)");
 
-            System.out.println("\nReopened the database:");
-            System.out.println("  users on disk: " + users.all().size());
-            users.findByUsername("alice").ifPresent(u ->
-                    System.out.println("  found @" + u.getUsername()
-                            + " with " + posts.byAuthor(u.getId()).size() + " post(s)"));
-        }
+        app.sendMessage("alice", "hey, great beach pics!");
+        app.login("alice");
+        app.sendMessage("bob", "thanks! come next time");
 
-        System.out.println("\nSame ports, same services - only the adapter changed. Data persisted to disk.");
-        System.out.println("(Run the whole app on SQLite with:  mvnw exec:java -Dmini.store=sqlite)");
+        System.out.println("\nConversation alice <-> bob:");
+        app.conversationWith("bob").forEach(message -> {
+            String who = app.user(message.senderId()).map(u -> "@" + u.getUsername()).orElse("?");
+            System.out.println("  " + who + ": " + message.text());
+        });
     }
 }

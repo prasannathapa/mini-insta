@@ -3,9 +3,14 @@ package com.miniinsta.app;
 import com.miniinsta.feed.FeedRankingStrategy;
 import com.miniinsta.feed.FeedService;
 import com.miniinsta.graph.GraphService;
+import com.miniinsta.messaging.DirectMessage;
+import com.miniinsta.messaging.MessagingService;
 import com.miniinsta.notification.Notification;
 import com.miniinsta.notification.NotificationService;
 import com.miniinsta.post.Comment;
+import com.miniinsta.search.SearchService;
+import com.miniinsta.story.Story;
+import com.miniinsta.story.StoryService;
 import com.miniinsta.post.PhotoPost;
 import com.miniinsta.post.Post;
 import com.miniinsta.post.PostService;
@@ -37,16 +42,23 @@ public class InstagramService {
     private final PostService posts;
     private final NotificationService notifications;
     private final FeedService feed;
+    private final StoryService stories;
+    private final SearchService search;
+    private final MessagingService messaging;
 
     private User currentUser;
 
     public InstagramService(UserService users, GraphService graph, PostService posts,
-                            NotificationService notifications, FeedService feed) {
+                            NotificationService notifications, FeedService feed,
+                            StoryService stories, SearchService search, MessagingService messaging) {
         this.users = users;
         this.graph = graph;
         this.posts = posts;
         this.notifications = notifications;
         this.feed = feed;
+        this.stories = stories;
+        this.search = search;
+        this.messaging = messaging;
     }
 
     // --- session ------------------------------------------------------------
@@ -144,6 +156,37 @@ public class InstagramService {
     /** The logged-in user's notification inbox, most recent first. */
     public List<Notification> notifications() {
         return notifications.inbox(requireLogin());
+    }
+
+    // --- stories ------------------------------------------------------------
+
+    public Story postStory(String content) {
+        return stories.post(requireLogin(), content);
+    }
+
+    /** Active stories from the people the logged-in user follows (plus their own). */
+    public List<Story> stories() {
+        return stories.timelineFor(requireLogin());
+    }
+
+    // --- search -------------------------------------------------------------
+
+    public List<User> searchUsers(String query) {
+        return search.usersMatching(query);
+    }
+
+    public List<Post> searchHashtag(String tag) {
+        return search.byHashtag(tag);
+    }
+
+    // --- direct messages ----------------------------------------------------
+
+    public DirectMessage sendMessage(String toUsername, String text) {
+        return messaging.send(requireLogin(), resolve(toUsername).getId(), text);
+    }
+
+    public List<DirectMessage> conversationWith(String username) {
+        return messaging.conversation(requireLogin(), resolve(username).getId());
     }
 
     public Optional<Post> post(long postId) {

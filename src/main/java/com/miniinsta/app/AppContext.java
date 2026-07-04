@@ -9,6 +9,8 @@ import com.miniinsta.graph.FollowRepository;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
 import com.miniinsta.graph.SqliteFollowRepository;
+import com.miniinsta.messaging.InMemoryMessageRepository;
+import com.miniinsta.messaging.MessagingService;
 import com.miniinsta.notification.InMemoryNotificationRepository;
 import com.miniinsta.notification.NotificationRepository;
 import com.miniinsta.notification.NotificationService;
@@ -24,6 +26,10 @@ import com.miniinsta.post.InMemoryPostRepository;
 import com.miniinsta.post.PostRepository;
 import com.miniinsta.post.PostService;
 import com.miniinsta.post.SqlitePostRepository;
+import com.miniinsta.search.InMemoryHashtagIndex;
+import com.miniinsta.search.SearchService;
+import com.miniinsta.story.InMemoryStoryRepository;
+import com.miniinsta.story.StoryService;
 import com.miniinsta.user.InMemoryUserRepository;
 import com.miniinsta.user.SqliteUserRepository;
 import com.miniinsta.user.UserRepository;
@@ -91,12 +97,19 @@ public final class AppContext {
         FeedService feedService = new FeedService(
                 feedRepository, postRepository, graphService, new ChronologicalFeedStrategy(), clock);
 
-        // Both feed fan-out and notifications react to the same PostCreated event.
+        // Stories, search and DMs use in-memory adapters; their SQLite versions
+        // would follow the same pattern as the five repositories above.
+        StoryService storyService = new StoryService(new InMemoryStoryRepository(), graphService, clock);
+        SearchService searchService = new SearchService(new InMemoryHashtagIndex(), postRepository, userService);
+        MessagingService messagingService = new MessagingService(new InMemoryMessageRepository(), clock);
+
+        // Three independent consumers all react to the same PostCreated event.
         eventBus.subscribe(PostCreated.class, feedService::onPostCreated);
         eventBus.subscribe(PostCreated.class, notificationService::onPostCreated);
+        eventBus.subscribe(PostCreated.class, searchService::onPostCreated);
 
-        this.instagram = new InstagramService(
-                userService, graphService, postService, notificationService, feedService);
+        this.instagram = new InstagramService(userService, graphService, postService,
+                notificationService, feedService, storyService, searchService, messagingService);
     }
 
     public static AppContext get() {
