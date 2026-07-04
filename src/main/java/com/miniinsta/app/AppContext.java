@@ -1,47 +1,60 @@
 package com.miniinsta.app;
 
+import com.miniinsta.graph.FollowRepository;
+import com.miniinsta.graph.GraphService;
+import com.miniinsta.graph.InMemoryFollowRepository;
 import com.miniinsta.post.InMemoryPostRepository;
 import com.miniinsta.post.PostRepository;
+import com.miniinsta.post.PostService;
 import com.miniinsta.user.InMemoryUserRepository;
 import com.miniinsta.user.UserRepository;
+import com.miniinsta.user.UserService;
+
+import java.time.Clock;
 
 /**
  * The application's composition root, implemented as a Singleton.
  *
- * <p>This is the <b>one and only place</b> that chooses concrete adapters. Every
- * other class receives its dependencies through its constructor and knows only
- * the port interfaces (Dependency Inversion), which is what keeps them unit
- * testable - a test wires a service with in-memory fakes and never touches this
+ * <p>This is the one place that (1) picks concrete adapters and (2) wires the
+ * dependency graph: repositories -&gt; services -&gt; facade. Everything else
+ * receives its collaborators through its constructor and depends only on
+ * interfaces, so tests wire their own graph with fakes and never touch this
  * class.</p>
  *
- * <p>Why a Singleton here and (almost) nowhere else? A composition root is
- * genuinely global and created exactly once at start-up, so the pattern fits.
- * Used carelessly elsewhere a Singleton becomes a hidden global variable and an
- * anti-pattern - a point worth making to the class.</p>
+ * <p>A Singleton fits a composition root - it is genuinely created once at
+ * start-up. Elsewhere a Singleton is usually a hidden global and an
+ * anti-pattern.</p>
  */
 public final class AppContext {
 
     private static final AppContext INSTANCE = new AppContext();
 
-    private final UserRepository userRepository;
-    private final PostRepository postRepository;
+    private final InstagramService instagram;
 
     private AppContext() {
-        // Swap these two lines for the SQLite adapters in step 9 and nothing
-        // above the ports has to change.
-        this.userRepository = new InMemoryUserRepository();
-        this.postRepository = new InMemoryPostRepository();
+        // A real clock in production; tests inject Clock.fixed(...) for
+        // deterministic time. This is the only place the system clock is read.
+        Clock clock = Clock.systemDefaultZone();
+
+        // (1) Choose adapters. Swap these for the SQLite versions in step 9.
+        UserRepository userRepository = new InMemoryUserRepository();
+        PostRepository postRepository = new InMemoryPostRepository();
+        FollowRepository followRepository = new InMemoryFollowRepository();
+
+        // (2) Wire services onto the ports (constructor injection = DIP).
+        UserService userService = new UserService(userRepository, clock);
+        GraphService graphService = new GraphService(followRepository, clock);
+        PostService postService = new PostService(postRepository, clock);
+
+        // (3) Expose one facade to the outside world.
+        this.instagram = new InstagramService(userService, graphService, postService);
     }
 
     public static AppContext get() {
         return INSTANCE;
     }
 
-    public UserRepository users() {
-        return userRepository;
-    }
-
-    public PostRepository posts() {
-        return postRepository;
+    public InstagramService instagram() {
+        return instagram;
     }
 }

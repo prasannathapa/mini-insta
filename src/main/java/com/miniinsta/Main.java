@@ -1,45 +1,41 @@
 package com.miniinsta;
 
 import com.miniinsta.app.AppContext;
+import com.miniinsta.app.InstagramService;
 import com.miniinsta.post.PhotoPost;
-import com.miniinsta.post.TextPost;
-import com.miniinsta.post.VideoPost;
-import com.miniinsta.user.User;
-
-import java.time.LocalDateTime;
+import com.miniinsta.post.Post;
 
 /**
  * Mini Instagram - console application.
  *
- * <p>STEP 03 - PORTS, ADAPTERS &amp; THE COMPOSITION ROOT. Entities are now
- * stored behind repository <em>ports</em>. {@link AppContext} is the single
- * place that picks the concrete (in-memory) adapters; this demo saves data
- * through those ports and reads it back, proving the seam works before any
- * business logic exists.</p>
+ * <p>STEP 04 - SERVICES &amp; FACADE. All behaviour now sits behind
+ * {@link InstagramService}. This demo drives the whole app through that one
+ * facade: register, follow, post, like, comment - each call quietly
+ * orchestrating the user, graph and post contexts.</p>
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Mini Instagram :: step 03 (ports + adapters + AppContext) ===\n");
+        System.out.println("=== Mini Instagram :: step 04 (services + facade) ===\n");
 
-        AppContext ctx = AppContext.get();
-        LocalDateTime now = LocalDateTime.now();
+        InstagramService app = AppContext.get().instagram();
 
-        User alice = ctx.users().save(new User("alice", "Alice Anderson", now));
-        User bob = ctx.users().save(new User("bob", "Bob Brown", now));
+        // Alice registers (which logs her in) and posts.
+        app.register("alice", "Alice Anderson");
+        PhotoPost sunset = app.postPhoto("Sunset at the beach", "beach.jpg", "clarendon");
+        app.postText("Good morning!");
 
-        ctx.posts().save(new PhotoPost(alice.getId(), "Sunset at the beach", now, "beach.jpg", "clarendon"));
-        ctx.posts().save(new TextPost(alice.getId(), "Good morning!", now));
-        ctx.posts().save(new VideoPost(bob.getId(), "My morning run", now, "run.mp4", 42));
+        // Bob registers, follows Alice, and engages with her post.
+        app.register("bob", "Bob Brown");
+        app.follow("alice");
+        app.like(sunset.getId());
+        app.comment(sunset.getId(), "Gorgeous shot!");
 
-        System.out.println("Lookup by username (case-insensitive): "
-                + ctx.users().findByUsername("ALICE").map(User::getFullName).orElse("<none>"));
+        System.out.println("bob follows: " + app.following());
+        System.out.println("bob follows alice? " + app.isFollowing("alice"));
 
-        System.out.println("\nAlice's posts (via PostRepository.findByAuthor):");
-        ctx.posts().findByAuthor(alice.getId())
-                .forEach(post -> System.out.println("  [" + post.getType() + "] " + post.getCaption()));
-
-        System.out.printf("%nStored: %d users, %d posts%n",
-                ctx.users().findAll().size(), ctx.posts().findAll().size());
+        Post reloaded = app.post(sunset.getId()).orElseThrow();
+        System.out.printf("%n\"%s\" now has %d like(s) and %d comment(s)%n",
+                reloaded.getCaption(), reloaded.getLikeCount(), reloaded.getCommentCount());
     }
 }
