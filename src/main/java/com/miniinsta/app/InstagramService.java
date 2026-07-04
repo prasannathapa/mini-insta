@@ -1,5 +1,7 @@
 package com.miniinsta.app;
 
+import com.miniinsta.feed.FeedRankingStrategy;
+import com.miniinsta.feed.FeedService;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.notification.Notification;
 import com.miniinsta.notification.NotificationService;
@@ -34,15 +36,17 @@ public class InstagramService {
     private final GraphService graph;
     private final PostService posts;
     private final NotificationService notifications;
+    private final FeedService feed;
 
     private User currentUser;
 
     public InstagramService(UserService users, GraphService graph, PostService posts,
-                            NotificationService notifications) {
+                            NotificationService notifications, FeedService feed) {
         this.users = users;
         this.graph = graph;
         this.posts = posts;
         this.notifications = notifications;
+        this.feed = feed;
     }
 
     // --- session ------------------------------------------------------------
@@ -117,6 +121,22 @@ public class InstagramService {
 
     public List<Comment> commentsOf(long postId) {
         return posts.commentsOf(postId);
+    }
+
+    // --- feed ---------------------------------------------------------------
+
+    /** The logged-in user's timeline, ordered by the current ranking strategy. */
+    public List<Post> feed() {
+        return feed.feed(requireLogin(), 50);
+    }
+
+    /** Swaps the feed ranking algorithm at runtime (Strategy). */
+    public void setFeedRanking(FeedRankingStrategy strategy) {
+        feed.setStrategy(strategy);
+    }
+
+    public String feedRanking() {
+        return feed.strategyName();
     }
 
     // --- notifications ------------------------------------------------------

@@ -1,5 +1,8 @@
 package com.miniinsta.app;
 
+import com.miniinsta.feed.ChronologicalFeedStrategy;
+import com.miniinsta.feed.FeedService;
+import com.miniinsta.feed.InMemoryFeedRepository;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
 import com.miniinsta.notification.InMemoryNotificationRepository;
@@ -35,13 +38,17 @@ class InstagramServiceTest {
     private InstagramService newApp() {
         Clock clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
         EventBus bus = new InProcessEventBus();
+        InMemoryPostRepository postRepository = new InMemoryPostRepository();
         UserService users = new UserService(new InMemoryUserRepository(), clock);
         GraphService graph = new GraphService(new InMemoryFollowRepository(), clock);
-        PostService posts = new PostService(new InMemoryPostRepository(), bus, clock);
+        PostService posts = new PostService(postRepository, bus, clock);
         NotificationService notifications = new NotificationService(
                 new InMemoryNotificationRepository(), graph, users, new ConsoleNotificationChannel(), clock);
+        FeedService feed = new FeedService(
+                new InMemoryFeedRepository(), postRepository, graph, new ChronologicalFeedStrategy(), clock);
+        bus.subscribe(PostCreated.class, feed::onPostCreated);
         bus.subscribe(PostCreated.class, notifications::onPostCreated);
-        return new InstagramService(users, graph, posts, notifications);
+        return new InstagramService(users, graph, posts, notifications, feed);
     }
 
     @Test

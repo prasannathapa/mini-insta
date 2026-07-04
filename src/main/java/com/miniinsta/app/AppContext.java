@@ -1,5 +1,9 @@
 package com.miniinsta.app;
 
+import com.miniinsta.feed.ChronologicalFeedStrategy;
+import com.miniinsta.feed.FeedRepository;
+import com.miniinsta.feed.FeedService;
+import com.miniinsta.feed.InMemoryFeedRepository;
 import com.miniinsta.graph.FollowRepository;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
@@ -52,6 +56,7 @@ public final class AppContext {
         PostRepository postRepository = new InMemoryPostRepository();
         FollowRepository followRepository = new InMemoryFollowRepository();
         NotificationRepository notificationRepository = new InMemoryNotificationRepository();
+        FeedRepository feedRepository = new InMemoryFeedRepository();
 
         // (2) Wire services onto the ports (constructor injection = DIP).
         // The notification delivery channel. Console today; swap for an email or
@@ -63,13 +68,18 @@ public final class AppContext {
         PostService postService = new PostService(postRepository, eventBus, clock);
         NotificationService notificationService = new NotificationService(
                 notificationRepository, graphService, userService, notificationChannel, clock);
+        FeedService feedService = new FeedService(
+                feedRepository, postRepository, graphService, new ChronologicalFeedStrategy(), clock);
 
-        // (3) Wire the observers to the bus. This is where "who listens to what"
-        // is declared - explicit and in one place.
+        // (3) Wire the observers to the bus. Both feed fan-out and notifications
+        // react to the same PostCreated event - this is where "who listens to
+        // what" is declared, explicit and in one place.
+        eventBus.subscribe(PostCreated.class, feedService::onPostCreated);
         eventBus.subscribe(PostCreated.class, notificationService::onPostCreated);
 
         // (4) Expose one facade to the outside world.
-        this.instagram = new InstagramService(userService, graphService, postService, notificationService);
+        this.instagram = new InstagramService(
+                userService, graphService, postService, notificationService, feedService);
     }
 
     public static AppContext get() {

@@ -23,7 +23,7 @@ public class EmailNotificationAdapter implements NotificationChannel {
     @Override
     public void deliver(String recipientHandle, Notification notification) {
         String address = recipientHandle + "@" + domain;
-        String subject = "Mini Instagram · " + notification.type();
+        String subject = "Mini Instagram - " + notification.type();
         client.sendEmail(address, subject, notification.message());
     }
 
