@@ -10,6 +10,7 @@ import com.miniinsta.messaging.MessagingService;
 import com.miniinsta.notification.InMemoryNotificationRepository;
 import com.miniinsta.notification.NotificationService;
 import com.miniinsta.notification.channel.ConsoleNotificationChannel;
+import com.miniinsta.platform.cache.InMemoryCache;
 import com.miniinsta.platform.events.EventBus;
 import com.miniinsta.platform.events.InProcessEventBus;
 import com.miniinsta.platform.events.PostCreated;
@@ -50,8 +51,8 @@ class InstagramServiceTest {
         PostService posts = new PostService(postRepository, bus, clock);
         NotificationService notifications = new NotificationService(
                 new InMemoryNotificationRepository(), graph, users, new ConsoleNotificationChannel(), clock);
-        FeedService feed = new FeedService(
-                new InMemoryFeedRepository(), postRepository, graph, new ChronologicalFeedStrategy(), clock);
+        FeedService feed = new FeedService(new InMemoryFeedRepository(), postRepository, graph,
+                new InMemoryCache<>(), new ChronologicalFeedStrategy(), clock);
         StoryService stories = new StoryService(new InMemoryStoryRepository(), graph, clock);
         SearchService search = new SearchService(new InMemoryHashtagIndex(), postRepository, users);
         MessagingService messaging = new MessagingService(new InMemoryMessageRepository(), clock);

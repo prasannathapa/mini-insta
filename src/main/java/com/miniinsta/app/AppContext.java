@@ -17,12 +17,15 @@ import com.miniinsta.notification.NotificationService;
 import com.miniinsta.notification.SqliteNotificationRepository;
 import com.miniinsta.notification.channel.ConsoleNotificationChannel;
 import com.miniinsta.notification.channel.NotificationChannel;
+import com.miniinsta.platform.cache.Cache;
+import com.miniinsta.platform.cache.InMemoryCache;
 import com.miniinsta.platform.db.DataAccessException;
 import com.miniinsta.platform.db.Database;
 import com.miniinsta.platform.events.EventBus;
 import com.miniinsta.platform.events.InProcessEventBus;
 import com.miniinsta.platform.events.PostCreated;
 import com.miniinsta.post.InMemoryPostRepository;
+import com.miniinsta.post.Post;
 import com.miniinsta.post.PostRepository;
 import com.miniinsta.post.PostService;
 import com.miniinsta.post.SqlitePostRepository;
@@ -43,6 +46,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Clock;
+import java.util.List;
 
 /**
  * The application's composition root, implemented as a Singleton.
@@ -94,8 +98,9 @@ public final class AppContext {
         PostService postService = new PostService(postRepository, eventBus, clock);
         NotificationService notificationService = new NotificationService(
                 notificationRepository, graphService, userService, notificationChannel, clock);
-        FeedService feedService = new FeedService(
-                feedRepository, postRepository, graphService, new ChronologicalFeedStrategy(), clock);
+        Cache<Long, List<Post>> feedCache = new InMemoryCache<>();
+        FeedService feedService = new FeedService(feedRepository, postRepository, graphService,
+                feedCache, new ChronologicalFeedStrategy(), clock);
 
         // Stories, search and DMs use in-memory adapters; their SQLite versions
         // would follow the same pattern as the five repositories above.
