@@ -28,16 +28,26 @@ public class PostService {
         return LocalDateTime.now(clock);
     }
 
+    /**
+     * The single creation path. {@link PostFactory} decides the concrete class
+     * from {@link PostRequest#type()}; we stamp the time and persist. The typed
+     * helpers below all funnel through here, so there is exactly one place posts
+     * are born.
+     */
+    public Post create(PostRequest request) {
+        return posts.save(PostFactory.create(request, now()));
+    }
+
     public PhotoPost postPhoto(long authorId, String caption, String imageUrl, String filter) {
-        return posts.save(new PhotoPost(authorId, caption, now(), imageUrl, filter));
+        return (PhotoPost) create(PostRequest.photo(authorId, caption, imageUrl, filter));
     }
 
     public VideoPost postVideo(long authorId, String caption, String videoUrl, int durationSeconds) {
-        return posts.save(new VideoPost(authorId, caption, now(), videoUrl, durationSeconds));
+        return (VideoPost) create(PostRequest.video(authorId, caption, videoUrl, durationSeconds));
     }
 
     public TextPost postText(long authorId, String caption) {
-        return posts.save(new TextPost(authorId, caption, now()));
+        return (TextPost) create(PostRequest.text(authorId, caption));
     }
 
     /** Likes a post. Idempotent: liking twice leaves the count at one. */

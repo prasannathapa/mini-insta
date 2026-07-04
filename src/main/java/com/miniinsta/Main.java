@@ -1,41 +1,38 @@
 package com.miniinsta;
 
-import com.miniinsta.app.AppContext;
-import com.miniinsta.app.InstagramService;
-import com.miniinsta.post.PhotoPost;
 import com.miniinsta.post.Post;
+import com.miniinsta.post.PostFactory;
+import com.miniinsta.post.PostRequest;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Mini Instagram - console application.
  *
- * <p>STEP 04 - SERVICES &amp; FACADE. All behaviour now sits behind
- * {@link InstagramService}. This demo drives the whole app through that one
- * facade: register, follow, post, like, comment - each call quietly
- * orchestrating the user, graph and post contexts.</p>
+ * <p>STEP 05 - FACTORY. Post creation is centralized in {@link PostFactory}: a
+ * {@link PostRequest} carries a {@code PostType} plus fields, and the factory
+ * returns the matching subclass. Every posting path in the app now funnels
+ * through it, so there is one place to change when a new post type appears.</p>
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Mini Instagram :: step 04 (services + facade) ===\n");
+        System.out.println("=== Mini Instagram :: step 05 (Factory) ===\n");
+        System.out.println("PostFactory turns a PostType + fields into the right Post subclass:\n");
 
-        InstagramService app = AppContext.get().instagram();
+        LocalDateTime now = LocalDateTime.now();
+        List<PostRequest> drafts = List.of(
+                PostRequest.photo(1L, "Sunset at the beach", "beach.jpg", "clarendon"),
+                PostRequest.video(1L, "My morning run", "run.mp4", 42),
+                PostRequest.text(1L, "Hello world!"));
 
-        // Alice registers (which logs her in) and posts.
-        app.register("alice", "Alice Anderson");
-        PhotoPost sunset = app.postPhoto("Sunset at the beach", "beach.jpg", "clarendon");
-        app.postText("Good morning!");
+        for (PostRequest draft : drafts) {
+            Post post = PostFactory.create(draft, now);
+            System.out.printf("  %-5s -> %-9s | %s%n",
+                    draft.type(), post.getClass().getSimpleName(), post.mediaDescription());
+        }
 
-        // Bob registers, follows Alice, and engages with her post.
-        app.register("bob", "Bob Brown");
-        app.follow("alice");
-        app.like(sunset.getId());
-        app.comment(sunset.getId(), "Gorgeous shot!");
-
-        System.out.println("bob follows: " + app.following());
-        System.out.println("bob follows alice? " + app.isFollowing("alice"));
-
-        Post reloaded = app.post(sunset.getId()).orElseThrow();
-        System.out.printf("%n\"%s\" now has %d like(s) and %d comment(s)%n",
-                reloaded.getCaption(), reloaded.getLikeCount(), reloaded.getCommentCount());
+        System.out.println("\nAll posting in the app now flows through this one factory.");
     }
 }
