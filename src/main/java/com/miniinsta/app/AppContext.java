@@ -3,6 +3,12 @@ package com.miniinsta.app;
 import com.miniinsta.graph.FollowRepository;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
+import com.miniinsta.notification.InMemoryNotificationRepository;
+import com.miniinsta.notification.NotificationRepository;
+import com.miniinsta.notification.NotificationService;
+import com.miniinsta.platform.events.EventBus;
+import com.miniinsta.platform.events.InProcessEventBus;
+import com.miniinsta.platform.events.PostCreated;
 import com.miniinsta.post.InMemoryPostRepository;
 import com.miniinsta.post.PostRepository;
 import com.miniinsta.post.PostService;
@@ -36,18 +42,28 @@ public final class AppContext {
         // deterministic time. This is the only place the system clock is read.
         Clock clock = Clock.systemDefaultZone();
 
+        // The message bus that decouples the contexts.
+        EventBus eventBus = new InProcessEventBus();
+
         // (1) Choose adapters. Swap these for the SQLite versions in step 9.
         UserRepository userRepository = new InMemoryUserRepository();
         PostRepository postRepository = new InMemoryPostRepository();
         FollowRepository followRepository = new InMemoryFollowRepository();
+        NotificationRepository notificationRepository = new InMemoryNotificationRepository();
 
         // (2) Wire services onto the ports (constructor injection = DIP).
         UserService userService = new UserService(userRepository, clock);
         GraphService graphService = new GraphService(followRepository, clock);
-        PostService postService = new PostService(postRepository, clock);
+        PostService postService = new PostService(postRepository, eventBus, clock);
+        NotificationService notificationService =
+                new NotificationService(notificationRepository, graphService, userService, clock);
 
-        // (3) Expose one facade to the outside world.
-        this.instagram = new InstagramService(userService, graphService, postService);
+        // (3) Wire the observers to the bus. This is where "who listens to what"
+        // is declared - explicit and in one place.
+        eventBus.subscribe(PostCreated.class, notificationService::onPostCreated);
+
+        // (4) Expose one facade to the outside world.
+        this.instagram = new InstagramService(userService, graphService, postService, notificationService);
     }
 
     public static AppContext get() {

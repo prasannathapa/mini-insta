@@ -1,5 +1,8 @@
 package com.miniinsta.post;
 
+import com.miniinsta.platform.events.EventBus;
+import com.miniinsta.platform.events.PostCreated;
+
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,10 +20,12 @@ import java.util.Optional;
 public class PostService {
 
     private final PostRepository posts;
+    private final EventBus events;
     private final Clock clock;
 
-    public PostService(PostRepository posts, Clock clock) {
+    public PostService(PostRepository posts, EventBus events, Clock clock) {
         this.posts = posts;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -35,7 +40,11 @@ public class PostService {
      * are born.
      */
     public Post create(PostRequest request) {
-        return posts.save(PostFactory.create(request, now()));
+        Post post = posts.save(PostFactory.create(request, now()));
+        // Announce it and move on - we neither know nor care who reacts (feed
+        // fan-out, notifications, search indexing all subscribe elsewhere).
+        events.publish(new PostCreated(post.getId(), post.getAuthorId(), post.getCreatedAt()));
+        return post;
     }
 
     public PhotoPost postPhoto(long authorId, String caption, String imageUrl, String filter) {

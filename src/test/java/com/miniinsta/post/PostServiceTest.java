@@ -1,5 +1,6 @@
 package com.miniinsta.post;
 
+import com.miniinsta.platform.events.InProcessEventBus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -17,7 +18,9 @@ class PostServiceTest {
     private final Clock clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
 
     private PostService service() {
-        return new PostService(new InMemoryPostRepository(), clock);
+        // No subscribers wired here: publishing PostCreated is a harmless no-op,
+        // which keeps this test focused purely on post behaviour.
+        return new PostService(new InMemoryPostRepository(), new InProcessEventBus(), clock);
     }
 
     @Test

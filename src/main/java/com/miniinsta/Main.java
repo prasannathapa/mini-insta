@@ -1,38 +1,53 @@
 package com.miniinsta;
 
-import com.miniinsta.post.Post;
-import com.miniinsta.post.PostFactory;
-import com.miniinsta.post.PostRequest;
+import com.miniinsta.app.AppContext;
+import com.miniinsta.app.InstagramService;
+import com.miniinsta.notification.Notification;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Mini Instagram - console application.
  *
- * <p>STEP 05 - FACTORY. Post creation is centralized in {@link PostFactory}: a
- * {@link PostRequest} carries a {@code PostType} plus fields, and the factory
- * returns the matching subclass. Every posting path in the app now funnels
- * through it, so there is one place to change when a new post type appears.</p>
+ * <p>STEP 06 - EVENTBUS &amp; OBSERVER. Creating a post now publishes a
+ * {@code PostCreated} event. The notification context is subscribed to it and
+ * fans a notification out to the author's followers - the post context has no
+ * idea it exists. This demo shows followers getting notified and a non-follower
+ * getting nothing.</p>
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Mini Instagram :: step 05 (Factory) ===\n");
-        System.out.println("PostFactory turns a PostType + fields into the right Post subclass:\n");
+        System.out.println("=== Mini Instagram :: step 06 (EventBus + Observer) ===\n");
 
-        LocalDateTime now = LocalDateTime.now();
-        List<PostRequest> drafts = List.of(
-                PostRequest.photo(1L, "Sunset at the beach", "beach.jpg", "clarendon"),
-                PostRequest.video(1L, "My morning run", "run.mp4", 42),
-                PostRequest.text(1L, "Hello world!"));
+        InstagramService app = AppContext.get().instagram();
 
-        for (PostRequest draft : drafts) {
-            Post post = PostFactory.create(draft, now);
-            System.out.printf("  %-5s -> %-9s | %s%n",
-                    draft.type(), post.getClass().getSimpleName(), post.mediaDescription());
+        app.register("alice", "Alice Anderson");
+        app.register("bob", "Bob");
+        app.follow("alice");
+        app.register("carol", "Carol");
+        app.follow("alice");
+
+        System.out.println("alice posts -> followers are notified over the bus\n");
+        app.login("alice");
+        app.postPhoto("Sunset at the beach", "beach.jpg", "clarendon");
+
+        app.login("bob");
+        System.out.println("  bob's inbox:   " + describe(app.notifications()));
+        app.login("carol");
+        System.out.println("  carol's inbox: " + describe(app.notifications()));
+
+        app.register("dave", "Dave"); // registers + logs in; dave follows nobody
+        System.out.println("  dave's inbox:  " + describe(app.notifications()) + "   (dave doesn't follow alice)");
+    }
+
+    private static String describe(List<Notification> inbox) {
+        if (inbox.isEmpty()) {
+            return "(empty)";
         }
-
-        System.out.println("\nAll posting in the app now flows through this one factory.");
+        return inbox.stream()
+                .map(n -> n.type() + " \"" + n.message() + "\"")
+                .collect(Collectors.joining(", "));
     }
 }

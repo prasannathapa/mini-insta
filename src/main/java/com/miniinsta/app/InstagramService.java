@@ -1,6 +1,8 @@
 package com.miniinsta.app;
 
 import com.miniinsta.graph.GraphService;
+import com.miniinsta.notification.Notification;
+import com.miniinsta.notification.NotificationService;
 import com.miniinsta.post.Comment;
 import com.miniinsta.post.PhotoPost;
 import com.miniinsta.post.Post;
@@ -31,13 +33,16 @@ public class InstagramService {
     private final UserService users;
     private final GraphService graph;
     private final PostService posts;
+    private final NotificationService notifications;
 
     private User currentUser;
 
-    public InstagramService(UserService users, GraphService graph, PostService posts) {
+    public InstagramService(UserService users, GraphService graph, PostService posts,
+                            NotificationService notifications) {
         this.users = users;
         this.graph = graph;
         this.posts = posts;
+        this.notifications = notifications;
     }
 
     // --- session ------------------------------------------------------------
@@ -112,6 +117,13 @@ public class InstagramService {
 
     public List<Comment> commentsOf(long postId) {
         return posts.commentsOf(postId);
+    }
+
+    // --- notifications ------------------------------------------------------
+
+    /** The logged-in user's notification inbox, most recent first. */
+    public List<Notification> notifications() {
+        return notifications.inbox(requireLogin());
     }
 
     public Optional<Post> post(long postId) {
