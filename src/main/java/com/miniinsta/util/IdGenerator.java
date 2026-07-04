@@ -23,4 +23,14 @@ public final class IdGenerator {
     public static long next(String sequence) {
         return SEQUENCES.computeIfAbsent(sequence, key -> new AtomicLong()).incrementAndGet();
     }
+
+    /**
+     * Advances a sequence so the next id is above {@code value}. Used at start-up
+     * to resume from the maximum id already stored in the database, so
+     * app-generated ids never collide with persisted rows.
+     */
+    public static void seed(String sequence, long value) {
+        SEQUENCES.computeIfAbsent(sequence, key -> new AtomicLong())
+                .updateAndGet(current -> Math.max(current, value));
+    }
 }

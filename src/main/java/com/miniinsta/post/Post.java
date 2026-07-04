@@ -28,11 +28,20 @@ public sealed abstract class Post permits PhotoPost, VideoPost, TextPost {
     private int likeCount;
     private int commentCount;
 
-    protected Post(long authorId, String caption, LocalDateTime createdAt) {
-        this.id = IdGenerator.next("post");
+    /** Full-field constructor used for rehydrating a post from storage. */
+    protected Post(long id, long authorId, String caption, LocalDateTime createdAt,
+                   int likeCount, int commentCount) {
+        this.id = id;
         this.authorId = authorId;
         this.caption = caption == null ? "" : caption;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+        this.likeCount = likeCount;
+        this.commentCount = commentCount;
+    }
+
+    /** Creation constructor: fresh id, zero engagement. */
+    protected Post(long authorId, String caption, LocalDateTime createdAt) {
+        this(IdGenerator.next("post"), authorId, caption, createdAt, 0, 0);
     }
 
     /** The concrete kind of post - implemented by each subclass. */

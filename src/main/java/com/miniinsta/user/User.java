@@ -23,12 +23,31 @@ public class User {
     private String bio;
     private final LocalDateTime createdAt;
 
+    /** Creates a brand-new user with a freshly generated id. */
     public User(String username, String fullName, LocalDateTime createdAt) {
-        this.id = IdGenerator.next("user");
-        this.username = Objects.requireNonNull(username, "username").trim().toLowerCase();
-        this.fullName = (fullName == null || fullName.isBlank()) ? this.username : fullName;
-        this.bio = "";
+        this(IdGenerator.next("user"),
+                normalize(username),
+                (fullName == null || fullName.isBlank()) ? normalize(username) : fullName,
+                "",
+                createdAt);
+    }
+
+    // Full-field constructor used both for creation (above) and rehydration.
+    private User(long id, String username, String fullName, String bio, LocalDateTime createdAt) {
+        this.id = id;
+        this.username = Objects.requireNonNull(username, "username");
+        this.fullName = fullName;
+        this.bio = bio == null ? "" : bio;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
+    }
+
+    /** Rebuilds a user from stored fields (data is already normalized). */
+    public static User fromStorage(long id, String username, String fullName, String bio, LocalDateTime createdAt) {
+        return new User(id, username, fullName, bio, createdAt);
+    }
+
+    private static String normalize(String username) {
+        return Objects.requireNonNull(username, "username").trim().toLowerCase();
     }
 
     public long getId() {

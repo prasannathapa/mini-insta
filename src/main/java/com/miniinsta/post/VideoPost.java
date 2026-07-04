@@ -14,6 +14,18 @@ public final class VideoPost extends Post {
         this.durationSeconds = Math.max(0, durationSeconds);
     }
 
+    private VideoPost(long id, long authorId, String caption, LocalDateTime createdAt,
+                      int likeCount, int commentCount, String videoUrl, int durationSeconds) {
+        super(id, authorId, caption, createdAt, likeCount, commentCount);
+        this.videoUrl = videoUrl == null ? "" : videoUrl;
+        this.durationSeconds = Math.max(0, durationSeconds);
+    }
+
+    public static VideoPost fromStorage(long id, long authorId, String caption, LocalDateTime createdAt,
+                                        int likeCount, int commentCount, String videoUrl, int durationSeconds) {
+        return new VideoPost(id, authorId, caption, createdAt, likeCount, commentCount, videoUrl, durationSeconds);
+    }
+
     public String getVideoUrl() {
         return videoUrl;
     }

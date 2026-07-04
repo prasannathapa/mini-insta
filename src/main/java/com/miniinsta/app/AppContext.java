@@ -4,38 +4,48 @@ import com.miniinsta.feed.ChronologicalFeedStrategy;
 import com.miniinsta.feed.FeedRepository;
 import com.miniinsta.feed.FeedService;
 import com.miniinsta.feed.InMemoryFeedRepository;
+import com.miniinsta.feed.SqliteFeedRepository;
 import com.miniinsta.graph.FollowRepository;
 import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
+import com.miniinsta.graph.SqliteFollowRepository;
 import com.miniinsta.notification.InMemoryNotificationRepository;
 import com.miniinsta.notification.NotificationRepository;
 import com.miniinsta.notification.NotificationService;
+import com.miniinsta.notification.SqliteNotificationRepository;
 import com.miniinsta.notification.channel.ConsoleNotificationChannel;
 import com.miniinsta.notification.channel.NotificationChannel;
+import com.miniinsta.platform.db.DataAccessException;
+import com.miniinsta.platform.db.Database;
 import com.miniinsta.platform.events.EventBus;
 import com.miniinsta.platform.events.InProcessEventBus;
 import com.miniinsta.platform.events.PostCreated;
 import com.miniinsta.post.InMemoryPostRepository;
 import com.miniinsta.post.PostRepository;
 import com.miniinsta.post.PostService;
+import com.miniinsta.post.SqlitePostRepository;
 import com.miniinsta.user.InMemoryUserRepository;
+import com.miniinsta.user.SqliteUserRepository;
 import com.miniinsta.user.UserRepository;
 import com.miniinsta.user.UserService;
+import com.miniinsta.util.IdGenerator;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Clock;
 
 /**
  * The application's composition root, implemented as a Singleton.
  *
- * <p>This is the one place that (1) picks concrete adapters and (2) wires the
- * dependency graph: repositories -&gt; services -&gt; facade. Everything else
- * receives its collaborators through its constructor and depends only on
- * interfaces, so tests wire their own graph with fakes and never touch this
- * class.</p>
- *
- * <p>A Singleton fits a composition root - it is genuinely created once at
- * start-up. Elsewhere a Singleton is usually a hidden global and an
- * anti-pattern.</p>
+ * <p>It picks the concrete adapters and wires repositories -&gt; services -&gt;
+ * facade. Set {@code -Dmini.store=sqlite} to run the whole app on the SQLite
+ * adapters instead of the in-memory ones - that swap is the payoff of depending
+ * on ports: not one line of service code changes. The default is in-memory, so
+ * a class demo starts from a clean slate every run.</p>
  */
 public final class AppContext {
 
@@ -44,23 +54,33 @@ public final class AppContext {
     private final InstagramService instagram;
 
     private AppContext() {
-        // A real clock in production; tests inject Clock.fixed(...) for
-        // deterministic time. This is the only place the system clock is read.
         Clock clock = Clock.systemDefaultZone();
-
-        // The message bus that decouples the contexts.
         EventBus eventBus = new InProcessEventBus();
 
-        // (1) Choose adapters. Swap these for the SQLite versions in step 9.
-        UserRepository userRepository = new InMemoryUserRepository();
-        PostRepository postRepository = new InMemoryPostRepository();
-        FollowRepository followRepository = new InMemoryFollowRepository();
-        NotificationRepository notificationRepository = new InMemoryNotificationRepository();
-        FeedRepository feedRepository = new InMemoryFeedRepository();
+        boolean useSqlite = "sqlite".equalsIgnoreCase(System.getProperty("mini.store", "memory"));
 
-        // (2) Wire services onto the ports (constructor injection = DIP).
-        // The notification delivery channel. Console today; swap for an email or
-        // SMS adapter (or a composite of several) without touching the service.
+        UserRepository userRepository;
+        PostRepository postRepository;
+        FollowRepository followRepository;
+        NotificationRepository notificationRepository;
+        FeedRepository feedRepository;
+
+        if (useSqlite) {
+            Database database = openDatabase();
+            resumeIdSequences(database); // continue ids past what's already stored
+            userRepository = new SqliteUserRepository(database);
+            postRepository = new SqlitePostRepository(database);
+            followRepository = new SqliteFollowRepository(database);
+            notificationRepository = new SqliteNotificationRepository(database);
+            feedRepository = new SqliteFeedRepository(database);
+        } else {
+            userRepository = new InMemoryUserRepository();
+            postRepository = new InMemoryPostRepository();
+            followRepository = new InMemoryFollowRepository();
+            notificationRepository = new InMemoryNotificationRepository();
+            feedRepository = new InMemoryFeedRepository();
+        }
+
         NotificationChannel notificationChannel = new ConsoleNotificationChannel();
 
         UserService userService = new UserService(userRepository, clock);
@@ -71,13 +91,10 @@ public final class AppContext {
         FeedService feedService = new FeedService(
                 feedRepository, postRepository, graphService, new ChronologicalFeedStrategy(), clock);
 
-        // (3) Wire the observers to the bus. Both feed fan-out and notifications
-        // react to the same PostCreated event - this is where "who listens to
-        // what" is declared, explicit and in one place.
+        // Both feed fan-out and notifications react to the same PostCreated event.
         eventBus.subscribe(PostCreated.class, feedService::onPostCreated);
         eventBus.subscribe(PostCreated.class, notificationService::onPostCreated);
 
-        // (4) Expose one facade to the outside world.
         this.instagram = new InstagramService(
                 userService, graphService, postService, notificationService, feedService);
     }
@@ -88,5 +105,36 @@ public final class AppContext {
 
     public InstagramService instagram() {
         return instagram;
+    }
+
+    private static Database openDatabase() {
+        String path = System.getProperty("mini.db", "data/mini-instagram.db");
+        try {
+            Path parent = Path.of(path).toAbsolutePath().getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+        } catch (IOException e) {
+            throw new DataAccessException("create data directory for " + path, e);
+        }
+        return Database.file(path);
+    }
+
+    private static void resumeIdSequences(Database database) {
+        resume(database, "user", "users");
+        resume(database, "post", "posts");
+        resume(database, "comment", "comments");
+        resume(database, "notification", "notifications");
+    }
+
+    private static void resume(Database database, String sequence, String table) {
+        try (Statement st = database.connection().createStatement();
+             ResultSet rs = st.executeQuery("SELECT COALESCE(MAX(id), 0) FROM " + table)) {
+            if (rs.next()) {
+                IdGenerator.seed(sequence, rs.getLong(1));
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("resume id sequence from " + table, e);
+        }
     }
 }

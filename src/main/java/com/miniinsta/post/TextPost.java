@@ -9,6 +9,16 @@ public final class TextPost extends Post {
         super(authorId, caption, createdAt);
     }
 
+    private TextPost(long id, long authorId, String caption, LocalDateTime createdAt,
+                     int likeCount, int commentCount) {
+        super(id, authorId, caption, createdAt, likeCount, commentCount);
+    }
+
+    public static TextPost fromStorage(long id, long authorId, String caption, LocalDateTime createdAt,
+                                       int likeCount, int commentCount) {
+        return new TextPost(id, authorId, caption, createdAt, likeCount, commentCount);
+    }
+
     @Override
     public PostType getType() {
         return PostType.TEXT;
