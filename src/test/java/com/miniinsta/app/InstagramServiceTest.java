@@ -4,6 +4,7 @@ import com.miniinsta.graph.GraphService;
 import com.miniinsta.graph.InMemoryFollowRepository;
 import com.miniinsta.notification.InMemoryNotificationRepository;
 import com.miniinsta.notification.NotificationService;
+import com.miniinsta.notification.channel.ConsoleNotificationChannel;
 import com.miniinsta.platform.events.EventBus;
 import com.miniinsta.platform.events.InProcessEventBus;
 import com.miniinsta.platform.events.PostCreated;
@@ -37,8 +38,8 @@ class InstagramServiceTest {
         UserService users = new UserService(new InMemoryUserRepository(), clock);
         GraphService graph = new GraphService(new InMemoryFollowRepository(), clock);
         PostService posts = new PostService(new InMemoryPostRepository(), bus, clock);
-        NotificationService notifications =
-                new NotificationService(new InMemoryNotificationRepository(), graph, users, clock);
+        NotificationService notifications = new NotificationService(
+                new InMemoryNotificationRepository(), graph, users, new ConsoleNotificationChannel(), clock);
         bus.subscribe(PostCreated.class, notifications::onPostCreated);
         return new InstagramService(users, graph, posts, notifications);
     }

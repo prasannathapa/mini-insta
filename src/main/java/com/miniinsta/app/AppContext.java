@@ -6,6 +6,8 @@ import com.miniinsta.graph.InMemoryFollowRepository;
 import com.miniinsta.notification.InMemoryNotificationRepository;
 import com.miniinsta.notification.NotificationRepository;
 import com.miniinsta.notification.NotificationService;
+import com.miniinsta.notification.channel.ConsoleNotificationChannel;
+import com.miniinsta.notification.channel.NotificationChannel;
 import com.miniinsta.platform.events.EventBus;
 import com.miniinsta.platform.events.InProcessEventBus;
 import com.miniinsta.platform.events.PostCreated;
@@ -52,11 +54,15 @@ public final class AppContext {
         NotificationRepository notificationRepository = new InMemoryNotificationRepository();
 
         // (2) Wire services onto the ports (constructor injection = DIP).
+        // The notification delivery channel. Console today; swap for an email or
+        // SMS adapter (or a composite of several) without touching the service.
+        NotificationChannel notificationChannel = new ConsoleNotificationChannel();
+
         UserService userService = new UserService(userRepository, clock);
         GraphService graphService = new GraphService(followRepository, clock);
         PostService postService = new PostService(postRepository, eventBus, clock);
-        NotificationService notificationService =
-                new NotificationService(notificationRepository, graphService, userService, clock);
+        NotificationService notificationService = new NotificationService(
+                notificationRepository, graphService, userService, notificationChannel, clock);
 
         // (3) Wire the observers to the bus. This is where "who listens to what"
         // is declared - explicit and in one place.

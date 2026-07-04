@@ -1,53 +1,45 @@
 package com.miniinsta;
 
-import com.miniinsta.app.AppContext;
-import com.miniinsta.app.InstagramService;
 import com.miniinsta.notification.Notification;
+import com.miniinsta.notification.NotificationType;
+import com.miniinsta.notification.channel.ConsoleNotificationChannel;
+import com.miniinsta.notification.channel.EmailNotificationAdapter;
+import com.miniinsta.notification.channel.NotificationChannel;
+import com.miniinsta.notification.channel.SmsNotificationAdapter;
+import com.miniinsta.notification.channel.external.LegacyEmailClient;
+import com.miniinsta.notification.channel.external.SmsGateway;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Mini Instagram - console application.
  *
- * <p>STEP 06 - EVENTBUS &amp; OBSERVER. Creating a post now publishes a
- * {@code PostCreated} event. The notification context is subscribed to it and
- * fans a notification out to the author's followers - the post context has no
- * idea it exists. This demo shows followers getting notified and a non-follower
- * getting nothing.</p>
+ * <p>STEP 07 - ADAPTER. The same {@link NotificationChannel} call is delivered
+ * three ways: straight to the console, and - via Adapters - through a
+ * third-party email client and SMS gateway whose APIs don't match ours. The
+ * caller loops over identical {@code deliver(...)} calls, oblivious to the
+ * translation each adapter performs.</p>
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Mini Instagram :: step 06 (EventBus + Observer) ===\n");
+        System.out.println("=== Mini Instagram :: step 07 (Adapter) ===\n");
 
-        InstagramService app = AppContext.get().instagram();
+        Notification sample = Notification.create(
+                1L, NotificationType.NEW_POST, "@alice shared a new post", LocalDateTime.now());
 
-        app.register("alice", "Alice Anderson");
-        app.register("bob", "Bob");
-        app.follow("alice");
-        app.register("carol", "Carol");
-        app.follow("alice");
+        List<NotificationChannel> channels = List.of(
+                new ConsoleNotificationChannel(),
+                new EmailNotificationAdapter(new LegacyEmailClient(), "mini.gram"),
+                new SmsNotificationAdapter(new SmsGateway()));
 
-        System.out.println("alice posts -> followers are notified over the bus\n");
-        app.login("alice");
-        app.postPhoto("Sunset at the beach", "beach.jpg", "clarendon");
-
-        app.login("bob");
-        System.out.println("  bob's inbox:   " + describe(app.notifications()));
-        app.login("carol");
-        System.out.println("  carol's inbox: " + describe(app.notifications()));
-
-        app.register("dave", "Dave"); // registers + logs in; dave follows nobody
-        System.out.println("  dave's inbox:  " + describe(app.notifications()) + "   (dave doesn't follow alice)");
-    }
-
-    private static String describe(List<Notification> inbox) {
-        if (inbox.isEmpty()) {
-            return "(empty)";
+        System.out.println("Delivering the same notification through every channel:\n");
+        for (NotificationChannel channel : channels) {
+            System.out.println("  via " + channel.name() + ":");
+            channel.deliver("bob", sample);
         }
-        return inbox.stream()
-                .map(n -> n.type() + " \"" + n.message() + "\"")
-                .collect(Collectors.joining(", "));
+
+        System.out.println("\nOne interface, three backends - adapters hide the mismatched APIs.");
     }
 }

@@ -1,6 +1,7 @@
 package com.miniinsta.notification;
 
 import com.miniinsta.graph.GraphService;
+import com.miniinsta.notification.channel.NotificationChannel;
 import com.miniinsta.platform.events.PostCreated;
 import com.miniinsta.user.User;
 import com.miniinsta.user.UserService;
@@ -24,13 +25,15 @@ public class NotificationService {
     private final NotificationRepository notifications;
     private final GraphService graph;
     private final UserService users;
+    private final NotificationChannel channel;
     private final Clock clock;
 
     public NotificationService(NotificationRepository notifications, GraphService graph,
-                               UserService users, Clock clock) {
+                               UserService users, NotificationChannel channel, Clock clock) {
         this.notifications = notifications;
         this.graph = graph;
         this.users = users;
+        this.channel = channel;
         this.clock = clock;
     }
 
@@ -42,7 +45,12 @@ public class NotificationService {
         String message = "@" + author + " shared a new post";
         LocalDateTime at = LocalDateTime.now(clock);
         for (long followerId : graph.followersOf(event.authorId())) {
-            notifications.save(Notification.create(followerId, NotificationType.NEW_POST, message, at));
+            Notification saved = notifications.save(
+                    Notification.create(followerId, NotificationType.NEW_POST, message, at));
+            // In-app inbox above; external delivery through whichever channel is
+            // configured (console/email/SMS) below - the service doesn't care which.
+            users.findById(followerId)
+                    .ifPresent(follower -> channel.deliver(follower.getUsername(), saved));
         }
     }
 
